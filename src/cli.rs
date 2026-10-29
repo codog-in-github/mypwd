@@ -6,7 +6,7 @@ pub(crate) struct Args {
     #[arg(short = 'i', long, value_name = "salt")]
     pub(crate) init: Option<String>,
 
-    /// 强制替换盐文件，未指定 --init 时生成随机盐
+    /// 备份旧盐并强制替换，未指定 --init 时生成随机盐
     #[arg(short = 'f', long)]
     pub(crate) force: bool,
 

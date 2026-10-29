@@ -1,5 +1,6 @@
 use std::{
-    env, fs, io,
+    env, fs,
+    io::{self, Write},
     path::{Path, PathBuf},
     sync::LazyLock,
 };
@@ -15,6 +16,17 @@ fn write_salt_to(salt_content: &str, file: &Path) -> io::Result<()> {
 
 fn read_salt_from(file: &Path) -> io::Result<String> {
     fs::read_to_string(file)
+}
+
+fn backup_salt(file: &Path) -> io::Result<()> {
+    let datetime = chrono::Local::now().format("%Y%m%d-%H%M%S%.9f");
+    let backup_path = file.with_file_name(format!("salt.{datetime}.bak"));
+    let content = fs::read(file)?;
+    let mut backup = fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(backup_path)?;
+    backup.write_all(&content)
 }
 
 fn salt_file_exists(file: &Path) -> bool {
@@ -44,6 +56,9 @@ pub(crate) fn init_salt(salt: Option<&str>, force: bool) -> io::Result<String> {
     };
 
     fs::create_dir_all(file.parent().expect("盐文件路径应包含父目录"))?;
+    if force && salt_file_exists(file) {
+        backup_salt(file)?;
+    }
     write_salt_to(&salt, file)?;
     Ok(salt)
 }
