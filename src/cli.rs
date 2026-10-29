@@ -1,4 +1,5 @@
 use clap::Parser;
+use std::io::{self, Write};
 
 #[derive(Parser)]
 pub(crate) struct Args {
@@ -10,11 +11,24 @@ pub(crate) struct Args {
     #[arg(short = 'f', long)]
     pub(crate) force: bool,
 
-    /// 删除历史盐备份，保留当前盐文件
+    /// 确认后删除历史盐备份，保留当前盐文件
     #[arg(short = 'c', long, conflicts_with_all = ["init", "force", "text"])]
     pub(crate) history_clear: bool,
 
     /// 要计算的文本，使用 --init 或 --history-clear 时可省略
     #[arg(required_unless_present_any = ["init", "history_clear"])]
     pub(crate) text: Option<String>,
+}
+
+pub(crate) fn confirm_history_clear() -> io::Result<bool> {
+    eprintln!("警告：将删除所有历史盐备份，删除后无法恢复。当前盐文件会保留。");
+    eprint!("确认清除？[y/N] ");
+    io::stderr().flush()?;
+
+    let mut answer = String::new();
+    io::stdin().read_line(&mut answer)?;
+    Ok(matches!(
+        answer.trim().to_ascii_lowercase().as_str(),
+        "y" | "yes"
+    ))
 }
