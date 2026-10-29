@@ -33,6 +33,35 @@ fn salt_file_exists(file: &Path) -> bool {
     file.is_file()
 }
 
+pub(crate) fn clear_salt_history() -> io::Result<()> {
+    let directory = SALT_FILE_PATH.parent().expect("盐文件路径应包含父目录");
+    let entries = match fs::read_dir(directory) {
+        Ok(entries) => entries,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(()),
+        Err(error) => return Err(error),
+    };
+
+    for entry in entries {
+        let entry = entry?;
+        let name = entry.file_name();
+        let Some(datetime) = name
+            .to_str()
+            .and_then(|name| name.strip_prefix("salt."))
+            .and_then(|name| name.strip_suffix(".bak"))
+        else {
+            continue;
+        };
+        if datetime.len() == 25
+            && chrono::NaiveDateTime::parse_from_str(datetime, "%Y%m%d-%H%M%S%.9f").is_ok()
+            && entry.file_type()?.is_file()
+        {
+            fs::remove_file(entry.path())?;
+        }
+    }
+
+    Ok(())
+}
+
 fn generate_salt(length: usize) -> String {
     let mut salt = String::with_capacity(length);
 

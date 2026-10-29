@@ -10,7 +10,11 @@ pub(crate) struct Args {
     #[arg(short = 'f', long)]
     pub(crate) force: bool,
 
-    /// 要计算的文本，使用 --init 时可省略
-    #[arg(required_unless_present = "init")]
+    /// 删除历史盐备份，保留当前盐文件
+    #[arg(short = 'c', long, conflicts_with_all = ["init", "force", "text"])]
+    pub(crate) history_clear: bool,
+
+    /// 要计算的文本，使用 --init 或 --history-clear 时可省略
+    #[arg(required_unless_present_any = ["init", "history_clear"])]
     pub(crate) text: Option<String>,
 }
